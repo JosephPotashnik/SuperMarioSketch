@@ -29,9 +29,6 @@ class Player {
         this.x = _x;
         this.y = _y;
         const [firstValue] = imagesMap.values();
-        console.log("first value is: " + firstValue);
-        console.log("first value width is: " + firstValue.width);
-
         this.width = firstValue.width / totalFrames;
         this.height = firstValue.height;
         this.runningStrength = 5;      
@@ -90,14 +87,16 @@ class Player {
                 this.x = 0;
             }
         }
-        else if (keys['Digit1'])
+        else if (this.velocityY == 0 && !this.isJumping)
         {
-            currentPlayer = players[0];
+            if (keys['Digit1'])
+                currentPlayer = players[0];
+            else if (keys['Digit2'])
+                currentPlayer = players[1];
+            else if (keys['Digit3'])
+                currentPlayer = players[2];
         }
-        else if (keys['Digit2'])
-        {
-            currentPlayer = players[1];
-        }
+        
         this.velocityX = 0;
         
 
@@ -155,24 +154,21 @@ class Player {
 
 }
 
-
-
-class Platform {
+class GameObject 
+{
     x;
     y;
     width;
     height;
     img;
 
-    constructor(_x, _y, _w = 100)
+    constructor(_x, _y, _w, _h, _img)
     {
         this.x = _x;
         this.y = _y;
-        this.img = platformImage;
-
         this.width = _w;
-        this.height = 20;
-
+        this.height = _h;
+        this.img = _img;
     }
 
     draw() 
@@ -186,8 +182,18 @@ class Platform {
             }
     }
 
-    checkPlatformCollision(player) {
-        //original
+
+}
+
+class Platform extends GameObject{
+
+    constructor(_x, _y, _w) {
+        super(_x, _y, _w, 20, platformImage); 
+      }
+
+    
+    checkCollision(player) 
+    {
         let collision = false;
         if (player.x < this.x + this.width  && //player is left of the right side of the platform
             player.x + player.width > this.x  && // player is right to the left side of the platform
@@ -225,7 +231,7 @@ function gameLoop() {
 
 function update() {
     currentPlayer.update();
-    checkPlatformCollision();
+    checkCollisions();
 }
 
 function render() {
@@ -234,28 +240,25 @@ function render() {
     //background first
     drawBackground();
     //then objects
-    drawPlatforms();
+    drawGameObjects();
     //then player
     //currentPlayer.draw();
     players.forEach(x => x.draw());
 }
 
 
-function drawPlatforms() {
-    platforms.forEach(x => x.draw());
+function drawGameObjects() {
+    gameObjects.forEach(x => x.draw());
 }
 
-function checkPlatformCollision() {
+function checkCollisions() {
     
-    //platforms.forEach(platform => checkPlatformCollision(player));
-
     //assumption: can we collide with more than one platform?
-    //if not, we can break immediately.
-
+    //if not, more efficient -> we can break immediately.
     players.forEach(p => {
-        for(let i=0;i<platforms.length;i++)
+        for(let i=0;i<gameObjects.length;i++)
             {
-                if (platforms[i].checkPlatformCollision(p))
+                if (gameObjects[i].checkCollision(p))
                 {
                     break;
                 }
@@ -269,15 +272,10 @@ function drawBackground() {
 
     //canvasOffsetX/4 creates parallax effect because the background moves out of the screen 4 times slower
     //than the platforms in the foreground.
-
     if (background.complete) 
     {
-  //      ctx.drawImage(backgroundImage, backgroundX, 0, canvas.width, canvas.height);
-   // ctx.drawImage(backgroundImage, backgroundX + canvas.width, 0, canvas.width, canvas.height);
-
         ctx.drawImage(background, 0 + canvasOffsetX/4, 0, canvas.width, canvas.height);
         ctx.drawImage(background, canvas.width + canvasOffsetX/4, 0, canvas.width, canvas.height);
-
     }
 }
 
@@ -285,41 +283,51 @@ let players = []
 let currentPlayer = [];
 let dog = [];
 let cat = [];
-let platforms = [];
+let monkey = [];
+let gameObjects = [];
 
-//dog images
-let spriteMapDog = new Map();
-let idleImgDog = new Image();
-let runImgDog = new Image();
-let jumpImgDog = new Image();
-let fallImDog = new Image();
-idleImgDog.src = './img/StreetAnimals/2 Dog 2/Idle.png';
-runImgDog.src = './img/StreetAnimals/2 Dog 2/Walk.png';
-jumpImgDog.src = './img/StreetAnimals/2 Dog 2/Idle.png';
-fallImDog.src = './img/StreetAnimals/2 Dog 2/Idle.png';
-spriteMapDog.set("Idle", idleImgDog);
-spriteMapDog.set("Run", runImgDog);
-spriteMapDog.set("Jump", jumpImgDog);
-spriteMapDog.set("Fall", fallImDog);
+let spriteMapMonkey = createSpriteMap('./img/StreetAnimals/Monkey');
+let spriteMapCat = createSpriteMap('./img/StreetAnimals/Cat');
+let spriteMapDog = createSpriteMap('./img/StreetAnimals/Dog');
 
-//cat images
-let spriteMapCat = new Map();
-let idleImgCat = new Image();
-let runImgCat = new Image();
-let jumpImgCat = new Image();
-let fallImgCat = new Image();
-idleImgCat.src = './img/StreetAnimals/4 Cat 2/Idle.png';
-runImgCat.src = './img/StreetAnimals/4 Cat 2/Walk.png';
-jumpImgCat.src = './img/StreetAnimals/4 Cat 2/Idle.png';
-fallImgCat.src = './img/StreetAnimals/4 Cat 2/Idle.png';
-spriteMapCat.set("Idle", idleImgCat);
-spriteMapCat.set("Run", runImgCat);
-spriteMapCat.set("Jump", jumpImgCat);
-spriteMapCat.set("Fall", fallImgCat);
+function createSpriteMap(relativePath)
+{
+    let spriteMap = new Map();
+    let idleImg = new Image();
+    let runImg = new Image();
+    let jumpImg = new Image();
+    let fallImg = new Image();
+    //file names of animations are fixed as follows:
+    idleImg.src = relativePath + '/Idle.png';
+    runImg.src = relativePath + '/Walk.png';
+    jumpImg.src = relativePath + '/Idle.png'; //TODO: design jump animation.
+    fallImg.src = relativePath + '/Idle.png'; //TODO: design fall animation
+    spriteMap.set("Idle", idleImg);
+    spriteMap.set("Run", runImg);
+    spriteMap.set("Jump", jumpImg);
+    spriteMap.set("Fall", fallImg);
 
+    idleImg.onload = function() {
+        imagesLoaded++;
+        checkIfAllImagesLoaded();
+      };
+      runImg.onload = function() {
+        imagesLoaded++;
+        checkIfAllImagesLoaded();
+      };
+      jumpImg.onload = function() {
+        imagesLoaded++;
+        checkIfAllImagesLoaded();
+      };
+      fallImg.onload = function() {
+        imagesLoaded++;
+        checkIfAllImagesLoaded();
+      };
+    return spriteMap;
+}
 
 let imagesLoaded = 0;
-let totalImages = 8;
+let totalImages = 12;
 
 function checkIfAllImagesLoaded() {
   if (imagesLoaded === totalImages) {
@@ -328,39 +336,7 @@ function checkIfAllImagesLoaded() {
   }
 }
 
-idleImgDog.onload = function() {
-  imagesLoaded++;
-  checkIfAllImagesLoaded();
-};
-runImgDog.onload = function() {
-  imagesLoaded++;
-  checkIfAllImagesLoaded();
-};
-jumpImgDog.onload = function() {
-  imagesLoaded++;
-  checkIfAllImagesLoaded();
-};
-fallImDog.onload = function() {
-  imagesLoaded++;
-  checkIfAllImagesLoaded();
-};
-
-idleImgCat.onload = function() {
-    imagesLoaded++;
-    checkIfAllImagesLoaded();
-  };
-  runImgCat.onload = function() {
-    imagesLoaded++;
-    checkIfAllImagesLoaded();
-  };
-  jumpImgCat.onload = function() {
-    imagesLoaded++;
-    checkIfAllImagesLoaded();
-  };
-  fallImgCat.onload = function() {
-    imagesLoaded++;
-    checkIfAllImagesLoaded();
-  };
+ 
 function init()
 {
     canvasOffsetX = 0;
@@ -371,17 +347,21 @@ function init()
     players = [];
     dog = new Player(50, canvas.height-20 - 48, spriteMapDog, totalFrames);
     cat = new Player(10, canvas.height-20 - 48, spriteMapCat, totalFrames);
+    monkey = new Player(80, canvas.height-20 - 48, spriteMapMonkey, totalFrames);
+
     players.push(dog);
     players.push(cat);
+    players.push(monkey);
+
     currentPlayer = dog;
 
     // Platforms array
-    platforms = [
+    gameObjects = [
         new Platform(0, canvas.height-20, 1200),
-        new Platform(100, 350),
-        new Platform(300, 300),
-        new Platform(500, 250),
-        new Platform(700, 350)
+        new Platform(100, 350, 100),
+        new Platform(300, 300, 100),
+        new Platform(500, 250, 100),
+        new Platform(700, 350, 100)
     ];
     
 }
