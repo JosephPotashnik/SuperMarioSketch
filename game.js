@@ -1,16 +1,19 @@
-const canvas = document.getElementById('gameCanvas');
+import * as Dialogue from './dialogue.js';
 
+const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const gravity = 0.5;
 let keys = {};
 let canvasOffsetX = 0;
 let xMax = 1200;
 
-// Load background image (optional)
+let lastRenderTime = 0;
+let dialogueActive = true;
 const background = new Image();
 background.src = './img/background.png'; // Make sure you have a background image or comment this out
 const platformImage = new Image();
 platformImage.src = './img/platform.png';
+
 
 class Player {
     x;
@@ -23,7 +26,7 @@ class Player {
     runningStrength;
     jumpingStrength;
 
-                        //image map is key: String, value: Image()
+    //image map is key: String, value: Image()
     constructor(_x, _y, imagesMap, totalFrames)
     {
         this.x = _x;
@@ -190,8 +193,6 @@ class GameObject
             ctx.drawImage(this.img, this.x + canvasOffsetX, this.y, this.width, this.height);
         }
     }
-
-
 }
 
 class Platform extends GameObject{
@@ -235,18 +236,32 @@ document.addEventListener('keyup', function (event) {
 });
 
 // Game loop
-function gameLoop() {
+function gameLoop(currentTime) {
     update();
-    render();
+    render(currentTime);
     requestAnimationFrame(gameLoop);
 }
 
 function update() {
-    currentPlayer.update();
-    checkCollisions();
+    
+    if (dialogueActive)
+    {
+        dialogueActive = Dialogue.dialogueUpdate(keys);
+    }
+    else
+    {
+        currentPlayer.update();
+        checkCollisions();
+
+    }
 }
 
-function render() {
+
+
+function render(time) 
+{
+    const deltaTime = time - lastRenderTime;
+    console.log(deltaTime);
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
 
     //background first
@@ -255,6 +270,14 @@ function render() {
     drawGameObjects();
     //then players
     players.forEach(x => x.draw());
+
+    if (dialogueActive)
+    {
+        //dialogue:
+        Dialogue.drawDialogueBox(ctx, canvas);
+        Dialogue.renderDialogue(ctx, canvas, deltaTime);
+    }
+    lastRenderTime = time;
 }
 
 
@@ -291,7 +314,6 @@ let dog = [];
 let cat = [];
 let monkey = [];
 let gameObjects = [];
-
 let spriteMapMonkey = [];
 let spriteMapCat = [];
 let spriteMapDog = [];
