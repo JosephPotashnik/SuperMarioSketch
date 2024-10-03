@@ -235,7 +235,7 @@ document.addEventListener('keyup', function (event) {
     keys[event.code] = false;
 });
 const doubleTapThreshold = 300;
-
+let lastTapTime = 0;
 // Add touch event listeners for mobile
 document.addEventListener('touchstart', function (event) {
     const touch = event.touches[0]; // Get the first touch point
