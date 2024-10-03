@@ -268,7 +268,6 @@ document.addEventListener('touchend', function (event) {
     keys['ArrowLeft'] = false;
     keys['ArrowRight'] = false;
     keys['Space'] = false;
-    keys['Enter'] = false;
 });
 
 // Game loop

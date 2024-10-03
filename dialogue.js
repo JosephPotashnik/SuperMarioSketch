@@ -93,6 +93,7 @@ export function renderDialogue(ctx, canvas, deltaTime) {
 export function dialogueUpdate(keys)
 {
     if (keys['Enter'] && dialogueFinished) {
+        keys['Enter'] = false;
         dialogueFinished = false;
         currentDialogueIndex++;
         if (currentDialogueIndex >= dialogues.length) {
