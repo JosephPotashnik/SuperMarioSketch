@@ -234,6 +234,42 @@ document.addEventListener('keydown', function (event) {
 document.addEventListener('keyup', function (event) {
     keys[event.code] = false;
 });
+const doubleTapThreshold = 300;
+
+// Add touch event listeners for mobile
+canvas.addEventListener('touchstart', function (event) {
+    const touch = event.touches[0]; // Get the first touch point
+    const touchX = touch.clientX; // Get the touch X position
+    const touchY = touch.clientY; // Get the touch Y position
+
+    const currentTime = new Date().getTime(); // Current time
+
+    // Check if the time between taps is within the threshold
+    if (currentTime - lastTapTime < doubleTapThreshold) {
+        // Handle double tap
+        keys['Enter'] = true;
+    }
+    // Logic to determine which button was pressed
+    else if (touchX < canvas.width / 4) {
+        keys['ArrowLeft'] = true; // Move left if touch is on the left side
+    } else if (touchX > (canvas.width*3 / 4)) 
+    {
+        keys['ArrowRight'] = true; // Move right if touch is on the right side
+    }
+    // Detect jump (for example, a touch on the bottom half of the canvas)
+    else if (touchY > canvas.height / 2) {
+        keys['Space'] = true; // Jump if touch is on the bottom half
+    }
+    lastTapTime = currentTime; // Update last tap time
+
+});
+
+canvas.addEventListener('touchend', function (event) {
+    keys['ArrowLeft'] = false;
+    keys['ArrowRight'] = false;
+    keys['Space'] = false;
+    keys['Enter'] = false;
+});
 
 // Game loop
 function gameLoop(currentTime) {
