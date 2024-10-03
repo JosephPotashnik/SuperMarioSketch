@@ -237,7 +237,7 @@ document.addEventListener('keyup', function (event) {
 const doubleTapThreshold = 300;
 
 // Add touch event listeners for mobile
-canvas.addEventListener('touchstart', function (event) {
+document.addEventListener('touchstart', function (event) {
     const touch = event.touches[0]; // Get the first touch point
     const touchX = touch.clientX; // Get the touch X position
     const touchY = touch.clientY; // Get the touch Y position
@@ -264,7 +264,7 @@ canvas.addEventListener('touchstart', function (event) {
 
 });
 
-canvas.addEventListener('touchend', function (event) {
+document.addEventListener('touchend', function (event) {
     keys['ArrowLeft'] = false;
     keys['ArrowRight'] = false;
     keys['Space'] = false;
