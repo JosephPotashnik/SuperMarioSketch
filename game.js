@@ -31,6 +31,9 @@ class Player {
         const [firstValue] = imagesMap.values();
         this.width = firstValue.width / totalFrames;
         this.height = firstValue.height;
+
+        this.y -= this.height;  //on creation, we receive coordinates of the platform we are created on.
+                                //hence substract height of character once.
         this.runningStrength = 5;      
         this.velocityX = 0;//velocity is actually pixels per frame refresh time.
         this.jumpingStrength = -10; 
@@ -261,13 +264,10 @@ function drawGameObjects() {
 
 function checkCollisions() {
     
-    //assumption: can we collide with more than one platform?
-    //if not, more efficient -> we can break immediately.
     players.forEach(p => {
         for(let i=0;i<gameObjects.length;i++)
             {
                 gameObjects[i].checkCollision(p);
-
             }
     });
 
@@ -331,18 +331,16 @@ async function createSpriteMap(relativePath)
     return spriteMap;
 }
 
-
-
- 
 function init()
 {
-    canvasOffsetX = 0;
-    let totalFrames = 4; //4 frames in each sprite animation.
-
     players = [];
-    dog = new Player(50, canvas.height-20 - 48, spriteMapDog, totalFrames);
-    cat = new Player(10, canvas.height-20 - 48, spriteMapCat, totalFrames);
-    monkey = new Player(80, canvas.height-20 - 48, spriteMapMonkey, totalFrames);
+    canvasOffsetX = 0;
+    let totalFrames = 4; //4 frames in each sprite animation. TODO: compute from each sprite animation length.
+    let firstFloorPlatform = new Platform(0, canvas.height-20, 1200);
+
+    dog = new Player(firstFloorPlatform.x +50, firstFloorPlatform.y, spriteMapDog, totalFrames);
+    cat = new Player(firstFloorPlatform.x + 10, firstFloorPlatform.y, spriteMapCat, totalFrames);
+    monkey = new Player(firstFloorPlatform.x + 80, firstFloorPlatform.y, spriteMapMonkey, totalFrames);
 
     players.push(dog);
     players.push(cat);
@@ -352,7 +350,7 @@ function init()
 
     // Platforms array
     gameObjects = [
-        new Platform(0, canvas.height-20, 1200),
+        firstFloorPlatform,
         new Platform(100, 350, 100),
         new Platform(300, 300, 100),
         new Platform(500, 250, 100),
