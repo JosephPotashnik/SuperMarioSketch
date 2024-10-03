@@ -286,62 +286,51 @@ let cat = [];
 let monkey = [];
 let gameObjects = [];
 
-let spriteMapMonkey = createSpriteMap('./img/StreetAnimals/Monkey');
-let spriteMapCat = createSpriteMap('./img/StreetAnimals/Cat');
-let spriteMapDog = createSpriteMap('./img/StreetAnimals/Dog');
+let spriteMapMonkey = [];
+let spriteMapCat = [];
+let spriteMapDog = [];
 
-function createSpriteMap(relativePath)
+async function createCharactersSpriteMap()
+{
+    spriteMapMonkey = await createSpriteMap('./img/StreetAnimals/Monkey');
+    spriteMapCat = await createSpriteMap('./img/StreetAnimals/Cat');
+    spriteMapDog = await createSpriteMap('./img/StreetAnimals/Dog');
+ 
+}
+async function createSpriteMap(relativePath)
 {
     let spriteMap = new Map();
-    let idleImg = new Image();
-    let runImg = new Image();
-    let jumpImg = new Image();
-    let fallImg = new Image();
     //file names of animations are fixed as follows:
-    idleImg.src = relativePath + '/Idle.png';
-    runImg.src = relativePath + '/Walk.png';
-    jumpImg.src = relativePath + '/Idle.png'; //TODO: design jump animation.
-    fallImg.src = relativePath + '/Idle.png'; //TODO: design fall animation
-    spriteMap.set("Idle", idleImg);
-    spriteMap.set("Run", runImg);
-    spriteMap.set("Jump", jumpImg);
-    spriteMap.set("Fall", fallImg);
+    let urlArray= [];
+    urlArray.push([relativePath + '/Idle.png', 'Idle']);
+    urlArray.push([relativePath + '/Walk.png', 'Walk']);
+    urlArray.push([relativePath + '/Idle.png', 'Jump']);//TODO: design jump animation.
+    urlArray.push([relativePath + '/Idle.png', 'Fall']);//TODO: design fall animation
+    let promiseArray = [];
 
-    idleImg.onload = function() {
-        imagesLoaded++;
-        checkIfAllImagesLoaded();
-      };
-      runImg.onload = function() {
-        imagesLoaded++;
-        checkIfAllImagesLoaded();
-      };
-      jumpImg.onload = function() {
-        imagesLoaded++;
-        checkIfAllImagesLoaded();
-      };
-      fallImg.onload = function() {
-        imagesLoaded++;
-        checkIfAllImagesLoaded();
-      };
+    for(let i = 0;i<urlArray.length;i++)
+    {
+        promiseArray.push(new Promise(resolve => {
+
+            const img = new Image();
+            img.src = urlArray[i][0];
+            img.onload = function() {
+                spriteMap.set(urlArray[i][1], img);
+                resolve();
+            };
+
+        }));
+    }
+    await Promise.all(promiseArray); // wait for all the images to be loaded
     return spriteMap;
 }
 
-let imagesLoaded = 0;
-let totalImages = 12;
 
-function checkIfAllImagesLoaded() {
-  if (imagesLoaded === totalImages) {
-    init();
-    requestAnimationFrame(gameLoop);
-  }
-}
 
  
 function init()
 {
     canvasOffsetX = 0;
-    // Player object
-
     let totalFrames = 4; //4 frames in each sprite animation.
 
     players = [];
@@ -366,5 +355,8 @@ function init()
     
 }
 
-checkIfAllImagesLoaded();
+createCharactersSpriteMap().then(() => {
+    init();
+    requestAnimationFrame(gameLoop);
+});
 
