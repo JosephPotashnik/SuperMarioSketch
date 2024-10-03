@@ -162,6 +162,15 @@ class GameObject
     height;
     img;
 
+    onCanvasArea()
+    {
+        return (this.x + canvasOffsetX + this.width > 0 &&         // Check if right edge is past the left of the canvas
+            this.x + canvasOffsetX < canvas.width &&           // Check if left edge is before the right of the canvas
+            this.y + this.height > 0 &&        // Check if bottom edge is past the top of the canvas
+            this.y < canvas.height);            // Check if top edge is before the bottom of the canvas
+    }
+
+
     constructor(_x, _y, _w, _h, _img)
     {
         this.x = _x;
@@ -173,13 +182,10 @@ class GameObject
 
     draw() 
     {
-        if (this.x + canvasOffsetX + this.width > 0 &&         // Check if right edge is past the left of the canvas
-            this.x + canvasOffsetX < canvas.width &&           // Check if left edge is before the right of the canvas
-            this.y + this.height > 0 &&        // Check if bottom edge is past the top of the canvas
-            this.y < canvas.height)            // Check if top edge is before the bottom of the canvas
-            {
-                ctx.drawImage(this.img, this.x + canvasOffsetX, this.y, this.width, this.height);
-            }
+        if (this.onCanvasArea())           
+        {
+            ctx.drawImage(this.img, this.x + canvasOffsetX, this.y, this.width, this.height);
+        }
     }
 
 
@@ -193,18 +199,21 @@ class Platform extends GameObject{
 
     
     checkCollision(player) 
-    {
+    {        
         let collision = false;
-        if (player.x < this.x + this.width  && //player is left of the right side of the platform
-            player.x + player.width > this.x  && // player is right to the left side of the platform
-            player.y + player.height < this.y + this.height && // player above plaform
-            player.y + player.height + player.velocityY > this.y)  // next step of player brings it below platform
-            {
-                player.y = this.y - player.height;
-                player.velocityY = 0;
-                player.isJumping = false;
-                collision = true;
-            }
+        if (this.onCanvasArea())   
+        {        
+            if (player.x < this.x + this.width  && //player is left of the right side of the platform
+                player.x + player.width > this.x  && // player is right to the left side of the platform
+                player.y + player.height < this.y + this.height && // player above plaform
+                player.y + player.height + player.velocityY > this.y)  // next step of player brings it below platform
+                {
+                    player.y = this.y - player.height;
+                    player.velocityY = 0;
+                    player.isJumping = false;
+                    collision = true;
+                }
+        }
         return collision;
 
     }
@@ -241,8 +250,7 @@ function render() {
     drawBackground();
     //then objects
     drawGameObjects();
-    //then player
-    //currentPlayer.draw();
+    //then players
     players.forEach(x => x.draw());
 }
 
@@ -258,10 +266,8 @@ function checkCollisions() {
     players.forEach(p => {
         for(let i=0;i<gameObjects.length;i++)
             {
-                if (gameObjects[i].checkCollision(p))
-                {
-                    break;
-                }
+                gameObjects[i].checkCollision(p);
+
             }
     });
 
