@@ -5,7 +5,8 @@ const ctx = canvas.getContext('2d');
 const gravity = 0.5;
 let keys = {};
 let canvasOffsetX = 0;
-let xMax = 1200;
+let xMax = 0;
+let yMax = 0;
 
 let lastRenderTime = 0;
 let dialogueActive = true;
@@ -96,11 +97,12 @@ class Player {
         else if (this.velocityY == 0 && !this.isJumping)
         {
             if (keys['Digit1'])
-                currentPlayer = players[0];
+                focusOnCharacter(players[0])
             else if (keys['Digit2'])
-                currentPlayer = players[1];
+                focusOnCharacter(players[1])
             else if (keys['Digit3'])
-                currentPlayer = players[2];
+                focusOnCharacter(players[2])
+
         }
         
         this.velocityX = 0;
@@ -198,7 +200,7 @@ class GameObject
 class Platform extends GameObject{
 
     constructor(_x, _y, _w) {
-        super(_x, _y, _w, 20, platformImage); 
+        super(_x, _y, _w, 24, platformImage); 
       }
 
     
@@ -296,7 +298,6 @@ function update() {
 function render(time) 
 {
     const deltaTime = time - lastRenderTime;
-    console.log(deltaTime);
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
 
     //background first
@@ -388,36 +389,80 @@ async function createSpriteMap(relativePath)
     return spriteMap;
 }
 
+
+function loadMapFromFile(url) {
+    return fetch(url)
+        .then(response => response.text())
+        .then(text => {
+            return text.split("\n");
+        });
+}
+
+
 function init()
 {
-    players = [];
     canvasOffsetX = 0;
-    let totalFrames = 4; //4 frames in each sprite animation. TODO: compute from each sprite animation length.
-    let firstFloorPlatform = new Platform(0, canvas.height-20, 1200);
-
-    dog = new Player(firstFloorPlatform.x +50, firstFloorPlatform.y, spriteMapDog, totalFrames);
-    cat = new Player(firstFloorPlatform.x + 10, firstFloorPlatform.y, spriteMapCat, totalFrames);
-    monkey = new Player(firstFloorPlatform.x + 80, firstFloorPlatform.y, spriteMapMonkey, totalFrames);
-
-    players.push(dog);
-    players.push(cat);
-    players.push(monkey);
-
-    currentPlayer = dog;
-
-    // Platforms array
-    gameObjects = [
-        firstFloorPlatform,
-        new Platform(100, 350, 100),
-        new Platform(300, 300, 100),
-        new Platform(500, 250, 100),
-        new Platform(700, 350, 100)
-    ];
+    const tileWidth = 24;
+    const tileHeight = 24;
     
+    loadMapFromFile('./levels/Book1.txt').then(map => {
+        gameObjects = parseMap(map, tileWidth, tileHeight);
+
+        let totalFrames = 4; //4 frames in each sprite animation. TODO: compute from each sprite animation length.
+
+        dog = new Player(50,yMax - 24, spriteMapDog, totalFrames);
+        cat = new Player(10, yMax - 24, spriteMapCat, totalFrames);
+        monkey = new Player(80, yMax - 24, spriteMapMonkey, totalFrames);
+
+        players = [];
+        players.push(dog);
+        players.push(cat);
+        players.push(monkey);
+        currentPlayer = dog;
+    });
 }
 
 createCharactersSpriteMap().then(() => {
     init();
     requestAnimationFrame(gameLoop);
 });
+
+function parseMap(map, tileWidth, tileHeight) {
+    let platforms = [];
+    
+    xMax = 0;
+    yMax = map.length * tileHeight;
+    for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[y].length; x++) {
+            if (map[y][x] === '#') {
+                let platformX = x * tileWidth;  // Calculate X position based on tile size
+                let platformY = y * tileHeight; // Calculate Y position based on tile size
+                platforms.push(new Platform(platformX, platformY, tileWidth)); // Create a new platform
+            }
+        }
+        if (xMax < map[y].length)
+        {
+            xMax = map[y].length;
+        }
+    }
+
+    xMax *= tileWidth;
+    console.log("xMax : " + xMax);
+    return platforms;
+}
+
+// Function to update the canvas offset to focus on a character
+//TODO: a dimming effect when switching between characters.
+
+function focusOnCharacter(character) {
+    currentPlayer = character;
+    // Calculate the new offset based on character position and canvas width
+    canvasOffsetX = canvas.width / 2 - character.x;
+    if (canvasOffsetX > 0) canvasOffsetX = 0;
+
+    if (canvasOffsetX  < canvas.width  - xMax)
+    {
+        canvasOffsetX =  canvas.width  - xMax;
+    }
+}
 

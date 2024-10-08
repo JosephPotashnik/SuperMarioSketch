@@ -1,6 +1,6 @@
 // Constants
 const DIALOGUE_BOX_HEIGHT = 150;
-const DIALOGUE_SPEED = 20;  // Speed of text appearing (ms per character)
+const DIALOGUE_SPEED = 15;  // Speed of text appearing (ms per character)
 
 // Dialogue state
 let currentDialogueIndex = 0;
