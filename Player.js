@@ -1,5 +1,4 @@
-import { gravity, init, focusOnCharacter } from './Game.js'; 
-//import { gravity } from './Game.js'; 
+import { gravity } from './Game.js'; 
 export class Player 
 {
     x;
@@ -126,12 +125,11 @@ export class Player
          //fallen below canvas - death pit
         if (this.y   > this.canvas.height) 
         {
-            init(); 
+            return [true, canvasOffsetX];
         }
-        else
-        {
-            return canvasOffsetX;
-        }
+
+        return [false, canvasOffsetX];
+
     }
 
     draw(canvasOffsetX) {

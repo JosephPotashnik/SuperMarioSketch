@@ -1,7 +1,6 @@
 import { Platform } from './Platform.js';
 import { ExitDoor } from './ExitDoor.js';
 import { Player } from './Player.js';
-import { Event } from './Event.js';
 import { Dialogue } from './Dialogue.js';
 
 const canvas = document.getElementById('gameCanvas');
@@ -14,7 +13,6 @@ let yMax = 0;
 const tileWidth = 24;
 const tileHeight = 24;
 let shownOnceAsTutorial = false;
-
 let lastRenderTime = 0;
 let activeEvent = null;
 const background = new Image();
@@ -22,36 +20,47 @@ background.src = './img/background.png'; // Make sure you have a background imag
 
 
 // Event listeners for key press detection
-document.addEventListener('keydown', function (event) {
+document.addEventListener('keydown', function (event) 
+{
     keys[event.code] = true;
     //This property (event.code)is useful when you want to handle keys based on their physical positions on the input device 
     //rather than the characters associated with those keys; 
 });
 
-document.addEventListener('keyup', function (event) {
+document.addEventListener('keyup', function (event) 
+{
     keys[event.code] = false;
 });
 
 // Game loop
-function gameLoop(currentTime) {
-    update();
+function gameLoop(currentTime) 
+{
+    let dead = update();
 
-    if (currentPlayer.velocityY == 0 && !currentPlayer.isJumping)
+    if (!dead)
     {
-        if (keys['Digit1'])
-            focusOnCharacter(players[0])
-        else if (keys['Digit2'])
-            focusOnCharacter(players[1])
-        else if (keys['Digit3'])
-            focusOnCharacter(players[2])
-    }
+        if (currentPlayer.velocityY == 0 && !currentPlayer.isJumping)
+        {
+            if (keys['Digit1'])
+                focusOnCharacter(players[0])
+            else if (keys['Digit2'])
+                focusOnCharacter(players[1])
+            else if (keys['Digit3'])
+                focusOnCharacter(players[2])
+        }
 
-    render(currentTime);
+        render(currentTime);
+    }
+    else
+    {
+        init();
+    }
     requestAnimationFrame(gameLoop);
 }
 
-function update() {
-    
+function update() 
+{
+    let dead = false;
     let eventOccurring = false;
     for(let i = 0;i<gameEvents.length;i++)
     {
@@ -69,9 +78,11 @@ function update() {
 
     if (activeEvent === null)
     {
-        canvasOffsetX = currentPlayer.update(canvasOffsetX, keys, players);
-        checkCollisions();
+        [dead, canvasOffsetX] = currentPlayer.update(canvasOffsetX, keys, players);
+        if (!dead)
+            checkCollisions();
     }
+    return dead;
 }
 
 
@@ -89,23 +100,24 @@ function render(time)
 
     if (activeEvent != null)
     {
-        activeEvent.drawDialogueBox();
         activeEvent.render(deltaTime);
     }
     lastRenderTime = time;
 }
 
 
-function drawGameObjects() {
+function drawGameObjects() 
+{
     gameObjects.forEach(x => x.draw(canvasOffsetX));
 }
 
-function drawPlayers() {
+function drawPlayers() 
+{
     players.forEach(x => x.draw(canvasOffsetX));
 }
 
-function checkCollisions() {
-
+function checkCollisions() 
+{
     players.forEach(p => {
         for(let i=0;i<gameObjects.length;i++)
             {
@@ -114,7 +126,8 @@ function checkCollisions() {
     });
 }
 
-function drawBackground() {
+function drawBackground() 
+{
     const parallaxOffset = canvasOffsetX / 4; // Parallax movement
 
     // Compute the x-position where the background should be drawn
@@ -211,13 +224,13 @@ export function init()
         { speaker: 'Dog', text: 'Since when are we capable of speaking?' },
         { speaker: 'Cat', text: 'Never mind all that. Let\'s get out of here!' },
         { speaker: 'Game', text: 'Use [LeftArrow] and [RightArrow] to move, Press [Space] to Jump'},
-        { speaker: 'Game', text: 'Press [1] for selecting Dog, [2] for Cat, and [3] for Monkey (Hit [Enter] to close dialogue)'}
+        { speaker: 'Game', text: 'Press [1] to select Dog, [2] for Cat, and [3] for Monkey (Hit [Enter] to close dialogue)'}
     ];
 
     const concludingDialogueText = [
         { speaker: 'Game', text: ' Tutorial Level Concluded!' },
         { speaker: 'Game', text: ' Stay tuned for further adventures with our disoriented heroes! ' },
-        { speaker: 'Game', text: ' GAME OVER (for now)! ' },
+        { speaker: 'Game', text: ' Feel free to roam the level ' },
     ];
 
 
