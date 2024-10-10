@@ -1,7 +1,8 @@
-import * as Dialogue from './Dialogue.js';
 import { Platform } from './Platform.js';
 import { ExitDoor } from './ExitDoor.js';
 import { Player } from './Player.js';
+import { Event } from './Event.js';
+import { Dialogue } from './Dialogue.js';
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -12,9 +13,10 @@ let xMax = 0;
 let yMax = 0;
 const tileWidth = 24;
 const tileHeight = 24;
+let shownOnceAsTutorial = false;
 
 let lastRenderTime = 0;
-let dialogueActive = false;
+let activeEvent = null;
 const background = new Image();
 background.src = './img/background.png'; // Make sure you have a background image or comment this out
 
@@ -50,15 +52,25 @@ function gameLoop(currentTime) {
 
 function update() {
     
-    // if (dialogueActive)
-    // {
-    //     dialogueActive = Dialogue.dialogueUpdate(keys);
-    // }
-    // else
+    let eventOccurring = false;
+    for(let i = 0;i<gameEvents.length;i++)
+    {
+        eventOccurring = gameEvents[i].update(keys);
+        if (eventOccurring)
+        {
+            activeEvent = gameEvents[i];
+            break;
+        }
+    }
+    if (!eventOccurring)
+    {
+        activeEvent = null; 
+    }
+
+    if (activeEvent === null)
     {
         canvasOffsetX = currentPlayer.update(canvasOffsetX, keys, players);
         checkCollisions();
-
     }
 }
 
@@ -73,13 +85,12 @@ function render(time)
     //then objects
     drawGameObjects();
     //then players
-    players.forEach(x => x.draw(canvasOffsetX));
+    drawPlayers();
 
-    if (dialogueActive)
+    if (activeEvent != null)
     {
-        //dialogue:
-        Dialogue.drawDialogueBox(ctx, canvas);
-        Dialogue.renderDialogue(ctx, canvas, deltaTime);
+        activeEvent.drawDialogueBox();
+        activeEvent.render(deltaTime);
     }
     lastRenderTime = time;
 }
@@ -87,6 +98,10 @@ function render(time)
 
 function drawGameObjects() {
     gameObjects.forEach(x => x.draw(canvasOffsetX));
+}
+
+function drawPlayers() {
+    players.forEach(x => x.draw(canvasOffsetX));
 }
 
 function checkCollisions() {
@@ -100,13 +115,19 @@ function checkCollisions() {
 }
 
 function drawBackground() {
+    const parallaxOffset = canvasOffsetX / 4; // Parallax movement
 
-    //canvasOffsetX/4 creates parallax effect because the background moves out of the screen 4 times slower
-    //than the platforms in the foreground.
-    if (background.complete) 
-    {
-        ctx.drawImage(background, 0 + canvasOffsetX/4, 0, canvas.width, canvas.height);
-        ctx.drawImage(background, canvas.width + canvasOffsetX/4, 0, canvas.width, canvas.height);
+    // Compute the x-position where the background should be drawn
+    let backgroundX = parallaxOffset % canvas.width; 
+    if (backgroundX > 0) {
+        backgroundX -= canvas.width; // Adjust if the offset is positive
+    }
+
+    // Ensure the image is loaded before drawing
+    if (background.complete) {
+        // Draw the background image twice to create a seamless wrap-around effect
+        ctx.drawImage(background, backgroundX, 0, canvas.width, canvas.height);
+        ctx.drawImage(background, backgroundX + canvas.width, 0, canvas.width, canvas.height);
     }
 }
 
@@ -116,6 +137,7 @@ let dog = [];
 let cat = [];
 let monkey = [];
 let gameObjects = [];
+let gameEvents = [];
 let spriteMapMonkey = [];
 let spriteMapCat = [];
 let spriteMapDog = [];
@@ -168,18 +190,51 @@ function loadMapFromFile(url) {
 export function init()
 {
     canvasOffsetX = 0;
-
     let totalFrames = 4; //4 frames in each sprite animation. TODO: compute from each sprite animation length.
 
+    //characters
     dog = new Player(50, yMax-tileHeight, spriteMapDog, totalFrames, ctx, canvas, xMax, yMax);
     cat = new Player(10,  yMax-tileHeight, spriteMapCat, totalFrames, ctx, canvas, xMax, yMax);
     monkey = new Player(80,  yMax-tileHeight, spriteMapMonkey, totalFrames, ctx, canvas, xMax, yMax);
-
     players = [];
     players.push(dog);
     players.push(cat);
     players.push(monkey);
     currentPlayer = dog;
+
+    //dialogues:
+    const openingDialogueText = [
+        { speaker: 'Monkey', text: ' Guys?.. Where are we? (Hit [Enter] to continue)' },
+        { speaker: 'Cat', text: 'I have absolutely no idea. (Hit [Enter] to continue)' },
+        { speaker: 'Dog', text: 'Doesn\'t something strike you as strange?' },
+        { speaker: 'Monkey', text: 'What?' },
+        { speaker: 'Dog', text: 'Since when are we capable of speaking?' },
+        { speaker: 'Cat', text: 'Never mind all that. Let\'s get out of here!' },
+        { speaker: 'Game', text: 'Use [LeftArrow] and [RightArrow] to move, Press [Space] to Jump'},
+        { speaker: 'Game', text: 'Press [1] for selecting Dog, [2] for Cat, and [3] for Monkey (Hit [Enter] to close dialogue)'}
+    ];
+
+    const concludingDialogueText = [
+        { speaker: 'Game', text: ' Tutorial Level Concluded!' },
+        { speaker: 'Game', text: ' Stay tuned for further adventures with our disoriented heroes! ' },
+        { speaker: 'Game', text: ' GAME OVER (for now)! ' },
+    ];
+
+
+    const dogBeyondStartLine = () =>  dog.x > 0 ;
+    let openingDialogue = new Dialogue(ctx, canvas, openingDialogueText, dogBeyondStartLine);
+
+    let finishLine = xMax - canvas.width / 2;
+    const allCharactersBeyondFinishLine = () =>  dog.x > finishLine && cat.x > finishLine && monkey.x > finishLine;
+    let concludingDialogue = new Dialogue(ctx, canvas, concludingDialogueText, allCharactersBeyondFinishLine);
+
+    gameEvents = [];
+    if (shownOnceAsTutorial == false)
+    {
+        shownOnceAsTutorial = true;
+        gameEvents.push(openingDialogue);
+    }
+    gameEvents.push(concludingDialogue);
 
 }
 

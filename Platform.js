@@ -17,8 +17,6 @@ export class Platform extends GameObject
 
         if (this.onCanvasArea(canvasOffsetX))   
         {                            
-            console.log("on area, player");
-
             if (player.x < this.x + this.width  && //player is left of the right side of the platform
                 player.x + player.width > this.x  && // player is right to the left side of the platform
                 player.y + player.height < this.y + this.height && // player above plaform

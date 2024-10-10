@@ -1,45 +1,55 @@
+import { Event } from './Event.js';
+
 // Constants
 const DIALOGUE_BOX_HEIGHT = 150;
 const DIALOGUE_SPEED = 15;  // Speed of text appearing (ms per character)
 
-// Dialogue state
-let currentDialogueIndex = 0;
-let currentCharIndex = 0;
-let dialogueFinished = false;
-let accumulatedTime = 0;
+export class Dialogue extends Event
+{
+    currentDialogueIndex;
+    currentCharIndex;
+    currentSpeakerFinished;
+    accumulatedTime;
+    dialogues;
+    ctx;
+    canvas;
 
-const dialogues = [
-    { speaker: 'Monkey', text: ' Guys?.. Where are we? (Hit [Enter] to continue)' },
-    { speaker: 'Cat', text: 'I have absolutely no idea. (Hit [Enter] to continue)' },
-    { speaker: 'Dog', text: 'Doesn\'t something strike you as strange?' },
-    { speaker: 'Monkey', text: 'What?' },
-    { speaker: 'Dog', text: 'Since when are we capable of speaking?' },
-    { speaker: 'Game', text: 'Use [LeftArrow] and [RightArrow] to move, Press [Space] to Jump'},
-    { speaker: 'Game', text: 'Press [1] or [2] or [3] to switch between the characters (Hit [Enter] to close dialogue)'}
-];
+constructor(_ctx, _canvas, _dialogues, _pred)
+{
+    super(_pred); 
+    this.currentDialogueIndex = 0;
+    this.currentCharIndex = 0;
+    this.currentSpeakerFinished = false;
+    this.accumulatedTime = 0;
+    this.ctx = _ctx;
+    this.canvas = _canvas;
+    this.dialogues = [..._dialogues];
+}
 
 
 // Helper to draw the dialogue box
-export function drawDialogueBox(ctx, canvas) {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-    ctx.fillRect(50,  50, canvas.width - 100, DIALOGUE_BOX_HEIGHT);
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(50, 50, canvas.width - 100, DIALOGUE_BOX_HEIGHT);
+drawDialogueBox() {
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    this.ctx.fillRect(50,  50, this.canvas.width - 100, DIALOGUE_BOX_HEIGHT);
+    this.ctx.strokeStyle = 'white';
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeRect(50, 50, this.canvas.width - 100, DIALOGUE_BOX_HEIGHT);
 }
 
 // Helper to draw the text
-function drawText(ctx, canvas, text, startX) {
-    const lines = wrapText(ctx, text, canvas.width - 120 - startX);
-    ctx.fillStyle = 'white';
-    ctx.font = '20px pixelFont';  // Pixel art fonts give it a retro feel
+drawText(text, startX) 
+{
+    const lines = this.wrapText(this.ctx, text, this.canvas.width - 120 - startX);
+    this.ctx.fillStyle = 'white';
+    this.ctx.font = '20px pixelFont';  // Pixel art fonts give it a retro feel
     lines.forEach((line, index) => {
-        ctx.fillText(line, startX, 90 + index * 24);
+        this.ctx.fillText(line, startX, 90 + index * 24);
     });
 }
 
 // Helper to wrap text within the dialogue box
-function wrapText(ctx, text, maxWidth) {
+wrapText(ctx, text, maxWidth) 
+{
     const words = text.split(' ');
     const lines = [];
     let line = '';
@@ -57,51 +67,63 @@ function wrapText(ctx, text, maxWidth) {
     return lines;
 }
 
-export function renderDialogue(ctx, canvas, deltaTime) {
-    const currentDialogue = dialogues[currentDialogueIndex];
-    
-    if (dialogueFinished) {
-        currentCharIndex = currentDialogue.text.length;
-    } else {
-        // Accumulate delta time across frames
-        accumulatedTime += deltaTime;
+    render(deltaTime) 
+    {
+        if (this.occurring)
+        {
+            const currentDialogue = this.dialogues[this.currentDialogueIndex];
+            
+            if (this.currentSpeakerFinished) {
+                this.currentCharIndex = currentDialogue.text.length;
+            } 
+            else {
+                // Accumulate delta time across frames
+                this.accumulatedTime += deltaTime;
 
-        // Only advance text when accumulated time exceeds DIALOGUE_SPEED
-        if (accumulatedTime >= DIALOGUE_SPEED) {
-            currentCharIndex++;
-            accumulatedTime = 0;  // Reset accumulated time after advancing text
+                // Only advance text when accumulated time exceeds DIALOGUE_SPEED
+                if (this.accumulatedTime >= DIALOGUE_SPEED) {
+                    this.currentCharIndex++;
+                    this.accumulatedTime = 0;  // Reset accumulated time after advancing text
 
-            // Check if we've reached the end of the dialogue
-            if (currentCharIndex >= currentDialogue.text.length) {
-                currentCharIndex = currentDialogue.text.length;
-                dialogueFinished = true;
+                    // Check if we've reached the end of the dialogue
+                    if (this.currentCharIndex >= currentDialogue.text.length) {
+                        this.currentCharIndex = currentDialogue.text.length;
+                        this.currentSpeakerFinished = true;
+                    }
+                }
+            }
+
+            // Draw the speaker's name in yellow
+            this.ctx.fillStyle = 'yellow';
+            this.ctx.font = 'bold 20px pixelFont';
+            this.ctx.fillText(`${currentDialogue.speaker}: `, 70, 90);
+
+            // Draw the dialogue text in white
+            const displayedText = currentDialogue.text.substring(0, this.currentCharIndex);
+            let addedWidth = this.ctx.measureText(`${currentDialogue.speaker}: `).width
+            this.drawText(displayedText, 70 + addedWidth );  // Start after the name
+        }
+    }
+
+    update(keys)
+    {
+        let occuring = super.update();
+        if (occuring)
+        {
+            if (keys['Enter'] && this.currentSpeakerFinished) 
+            {
+                keys['Enter'] = false;
+                this.currentSpeakerFinished = false;
+                this.currentDialogueIndex++;
+                if (this.currentDialogueIndex >= this.dialogues.length) 
+                {
+                    this.currentDialogueIndex = 0; 
+                    super.endEvent(); 
+                }
+                this.currentCharIndex = 0;
             }
         }
+
+        return occuring;
     }
-
-    // Draw the speaker's name in yellow
-    ctx.fillStyle = 'yellow';
-    ctx.font = 'bold 20px pixelFont';
-    ctx.fillText(`${currentDialogue.speaker}: `, 70, 90);
-
-    // Draw the dialogue text in white
-    const displayedText = currentDialogue.text.substring(0, currentCharIndex);
-    let addedWidth = ctx.measureText(`${currentDialogue.speaker}: `).width
-    drawText(ctx, canvas, displayedText, 70 + addedWidth );  // Start after the name
-}
-
-export function dialogueUpdate(keys)
-{
-    if (keys['Enter'] && dialogueFinished) {
-        keys['Enter'] = false;
-        dialogueFinished = false;
-        currentDialogueIndex++;
-        if (currentDialogueIndex >= dialogues.length) {
-            currentDialogueIndex = 0;  
-            return false;
-        }
-        currentCharIndex = 0;
-        return true;
-    }
-    return true;    
 }
