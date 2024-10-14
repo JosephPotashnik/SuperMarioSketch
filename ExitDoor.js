@@ -7,7 +7,7 @@ export class ExitDoor extends GameObject
 {
 
     constructor(_x, _y, _ctx, _canvas) {
-        super(_x, _y-128+24, 87, 128, exitDoorImage, _ctx, _canvas); 
+        super(_x, _y-128+20, 87, 128, exitDoorImage, _ctx, _canvas); //TODO: instead of hard coded coordinates.
       }
 
     

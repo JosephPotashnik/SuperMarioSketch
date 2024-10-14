@@ -7,7 +7,7 @@ export class Platform extends GameObject
 {
 
     constructor(_x, _y, _w, _ctx, _canvas) {
-        super(_x, _y, _w, 24, platformImage, _ctx, _canvas); 
+        super(_x, _y, _w, 20, platformImage, _ctx, _canvas); 
       }
 
     

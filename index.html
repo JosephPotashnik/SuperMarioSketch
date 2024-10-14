@@ -2,26 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dog, Cat and Monkey</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            padding: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        canvas {
-            display: block;
-            background-color: #87CEEB; /* Sky blue background */
-        }
-    </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="768" height="432"></canvas> <!-- 16:9 ratio -->
+    <div class="container">
+        <canvas id="gameCanvas" width="640" height="360"></canvas> <!-- 16:9 ratio -->
+    </div>
     <script src="Game.js" type="module"></script>
 </body>
 </html>
